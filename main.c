@@ -26,6 +26,7 @@ void ajout_livre() {
 
 	struct livre *l = &livres_t[nb_livres];
 
+	// TODO: check if id is already used, can't have repeat ids
 	do {
 		printf("Saisir l'identifiant : ");
 		scanf("%d",&l->id);
@@ -89,42 +90,63 @@ void sup_livre() {
 }
 
 void ch_livre_id(){
-    int id;
-    int trouve=0;
-    do{
- printf("Saisir l'identifiant du livre que vous voulez\n");
- scanf("%d",&id);
-    } while(id<0);
+	int id;
+	int trouve=0;
+	do{
+		printf("Saisir l'identifiant du livre que vous voulez\n");
+		scanf("%d",&id);
+	} while(id<0);
 
-    for(int i=0 ; i<nb_livres ; i++)
-    {
-        if(id==livres_t[i].id)
-            {
-                trouve=1;
-               struct livre *l=&livres_t[i];
-		printf("%d\t%s\t%s\t%d\n",l->id,l->titre,l->auteur,l->date);
-            }
-    }
-    if(!trouve)
-    {
-        printf("Il n'y a aucun livre avec cet identifiant\n");
-    }
+	for(int i=0 ; i<nb_livres ; i++)
+	{
+		if(id==livres_t[i].id)
+		{
+			trouve=1;
+			struct livre *l=&livres_t[i];
+			printf("%d\t%s\t%s\t%d\n",l->id,l->titre,l->auteur,l->date);
+		}
+	}
+	if(!trouve)
+	{
+		printf("Il n'y a aucun livre avec cet identifiant\n");
+	}
+}
+
+void ch_livre_titre() {
+	char titre[STRING_MAX];
+	int trouvee = 0;
+
+	printf("Saisir le titre du livre que vous voulez\n");
+	scanf("%s", &titre);
+
+	for(int i = 0; i < nb_livres; i++)
+	{
+		if(!strcmp(titre, livres_t[i].titre))
+		{
+			trouvee = 1;
+			struct livre *l=&livres_t[i];
+			printf("%d\t%s\t%s\t%d\n",l->id,l->titre,l->auteur,l->date);
+		}
+	}
+
+	if (!trouvee) {
+		printf("Il n'y a aucun livre avec ce titre.\n");
+	}
 }
 
 void ch_livre(){
- int choix;
- printf("Voulez-vous chercher le livre par son titre ou son identifiant?\n");
- do{
-printf("Taper 0 pour le titre ou 1 pour l'identifiant : ");
- scanf("%d",&choix);
- }while(choix!=0 && choix!=1);
+	int choix;
+	printf("Voulez-vous chercher le livre par son titre ou son identifiant?\n");
+	do{
+		printf("Taper 0 pour le titre ou 1 pour l'identifiant : ");
+		scanf("%d",&choix);
+	}while(choix!=0 && choix!=1);
 
- if(choix)
- {
-    ch_livre_id();
- }
- else
-    ch_livre_titre(;)
+	if (choix) {
+		ch_livre_id();
+	} else {
+		ch_livre_titre();
+	}
 }
 
 int main() {
@@ -135,8 +157,6 @@ int main() {
 	ajout_livre();
 	ajout_livre();
 	ajout_livre();
-	aff_livres();
-	sup_livre();
-	aff_livres();
+	ch_livre();
 	return 0;
 }
