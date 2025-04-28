@@ -5,7 +5,7 @@
 #define STRING_MAX 255
 #define MAX_LIVRES 255
 
-// get current year
+// for getting current year
 int annee;
 
 struct livre {
@@ -154,9 +154,22 @@ int main() {
 	struct tm tm = *localtime(&t);
 	annee = tm.tm_year + 1900;
 
-	ajout_livre();
-	ajout_livre();
-	ajout_livre();
-	ch_livre();
+	int choix;
+	while(1) {
+		printf("1: Ajouter un livre\n");
+		printf("2: Supprimer un livre\n");
+		printf("3: Chercher un livre\n");
+		printf("4: Afficher tous les livres\n");
+
+		scanf("%d", &choix);
+
+		switch(choix) {
+			case 1: ajout_livre(); break;
+			case 2: sup_livre(); break;
+			case 3: ch_livre(); break;
+			case 4: aff_livres(); break;
+		}
+	}
+
 	return 0;
 }
