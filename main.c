@@ -11,6 +11,12 @@
 
 #define numlen(n) (floor(log10l(n)) + 1)
 
+#ifdef _WIN32
+	#define CLEAR "cls"
+#else
+	#define CLEAR "clear"
+#endif
+
 struct student {
 	long long ID;
 	char Fname[STRING_MAX];
@@ -26,8 +32,8 @@ struct book {
 
 	int Borrowed;
 	struct student *Borrower;
-	struct tm *BorrowDate;
-	struct tm *ReturnDate;
+	struct tm BorrowDate;
+	struct tm ReturnDate;
 };
 
 struct book books[BOOKS_MAX];
@@ -104,11 +110,11 @@ void print_books(struct book books_list[BOOKS_MAX], long long books_list_l) {
 			sprintf(b_fields[4], "%lld", b->Borrower->ID);
 
 			char borrow_date_s[STRING_MAX];
-			sprintf(borrow_date_s, "%d/%d/%d", b->BorrowDate->tm_mday, b->BorrowDate->tm_mon + 1, b->BorrowDate->tm_year + 1900);
+			sprintf(borrow_date_s, "%d/%d/%d", b->BorrowDate.tm_mday, b->BorrowDate.tm_mon + 1, b->BorrowDate.tm_year + 1900);
 			strcpy(b_fields[5], borrow_date_s);
 
 			char return_date_s[STRING_MAX];
-			sprintf(return_date_s, "%d/%d/%d", b->ReturnDate->tm_mday, b->ReturnDate->tm_mon + 1, b->ReturnDate->tm_year + 1900);
+			sprintf(return_date_s, "%d/%d/%d", b->ReturnDate.tm_mday, b->ReturnDate.tm_mon + 1, b->ReturnDate.tm_year + 1900);
 			strcpy(b_fields[6], return_date_s);
 		} else {
 			strcpy(b_fields[4], "-");
@@ -654,9 +660,8 @@ void borrow_book() {
 	printf("Date d'emprunt (Sous la forme JJ/MM/AAAA)\n> ");
 	char date_s[STRING_MAX];
 	int year, month, day;
-	struct tm borrow_date;
 	while (1) {
-		if (!read_str(date_s) || sscanf(date_s, "%d/%d/%d", &day, &month, &year) != 3) {
+		if (!read_str(date_s) || sscanf(date_s, "%d/%d/%d/%d", &day, &month, &year, &year) != 3) {
 			printf("La date d'emprunt doit etre ecrit sous la form JJ/MM/AAAA!\n> ");
 			continue;
 		}
@@ -671,31 +676,105 @@ void borrow_book() {
 			continue;
 		}
 
-		printf("We'RE GOOD\n");
 
 		if (day < 1 || day > 31) {
 			printf("Le jour doit etre entre 1 et 31!\n> ");
 			continue;
 		}
 
-		printf("ALL UNGOOD :D\n");
-		borrow_date.tm_year = year - 1900;
-		borrow_date.tm_mon = month - 1;
-		borrow_date.tm_mday = day;
-		printf("ALL GOOD :D\n");
+		b->BorrowDate.tm_year = year - 1900;
+		b->BorrowDate.tm_mon = month - 1;
+		b->BorrowDate.tm_mday = day;
 
 		time_t t = time(NULL);
-		if (mktime(&borrow_date) > mktime(localtime(&t))) {
+		if (mktime(&b->BorrowDate) > mktime(localtime(&t))) {
 			printf("La date d'emprunt ne peut pas etre dans le futur!\n> ");
 			continue;
 		}
 
 		break;
 	}
-	b->BorrowDate = &borrow_date;
-	b->ReturnDate = &borrow_date;
 
-	printf("%d\n", b->BorrowDate->tm_year);
+	printf("Date de retour (Sous la forme JJ/MM/AAAA)\n> ");
+	while (1) {
+		if (!read_str(date_s) || sscanf(date_s, "%d/%d/%d/%d", &day, &month, &year, &year) != 3) {
+			printf("La date de retour doit etre ecrit sous la form JJ/MM/AAAA!\n> ");
+			continue;
+		}
+
+		if (year < 1900) {
+			printf("L'annne ne peut pas etre inferieur a 1900!\n> ");
+			continue;
+		}
+
+		if (month < 1 || month > 12) {
+			printf("Le mois doit etre entre 1 et 12!\n> ");
+			continue;
+		}
+
+
+		if (day < 1 || day > 31) {
+			printf("Le jour doit etre entre 1 et 31!\n> ");
+			continue;
+		}
+
+		b->ReturnDate.tm_year = year - 1900;
+		b->ReturnDate.tm_mon = month - 1;
+		b->ReturnDate.tm_mday = day;
+
+		time_t t = time(NULL);
+		if (mktime(&b->ReturnDate) < mktime(&b->BorrowDate)) {
+			printf("La date de retour ne peut pas etre avant la date d'emprunt!\n> ");
+			continue;
+		}
+
+		break;
+	}
+}
+
+void return_book() {
+	if (books_l == 0) {
+		printf("Il y'a aucun livre.\n");
+		return;
+	}
+
+	int borrowed_books_l = 0;
+	for (int i = 0; i < books_l; i++) {
+		if (books[i].Borrowed) {
+			borrowed_books_l++;
+		}
+	}
+	if (!borrowed_books_l) {
+		printf("Il y'a aucun livre emprunter!\n");
+		return;
+	}
+
+	long long int id;
+	printf("Identifiant du livre\n> ");
+	while (1) { 
+		if (read_ll(&id)) { 
+			printf("L'identifiant doit etre un nombre!\n> ");
+			continue;
+		}
+		if (id < 0) {
+			printf("L'identifiant doit etre un positif!\n> ");
+			continue;
+		}
+		break;
+	}
+
+	for (int i = 0; i < books_l; i++) {
+		if (id == books[i].ID) {
+			if (!books[i].Borrowed) {
+				printf("Ce livre n'est pas emprunter!\n");
+				return;
+			}
+			books[i].Borrowed = 0;
+			return;
+		}
+	}
+
+	printf("Aucun livre avec cet identifiant existe!\n");
 }
 
 int main() {
@@ -710,11 +789,13 @@ int main() {
 			"5: Ajouter un etudiant\n"
 			"6: Afficher les etudiants\n"
 			"7: Emprunter un livre\n"
+			"8: Retourner un livre\n"
+			"9: effacer l'affichage\n"
 			"> "
 		);
 		while (1) { 
-			if (read_i(&input) || input < 0 || input > 7) { 
-				printf("Votre choix doit etre un nombre entre 0 et 7!\n> ");
+			if (read_i(&input) || input < 0 || input > 9) { 
+				printf("Votre choix doit etre un nombre entre 0 et 9!\n> ");
 				continue;
 			}
 			break;
@@ -728,6 +809,8 @@ int main() {
 			case 5: add_student(); break;
 			case 6: print_students(); break;
 			case 7: borrow_book(); break;
+			case 8: return_book(); break;
+			case 9: system(CLEAR); continue;
 		}
 		printf("\n");
 		repeat_char('-', 80);
