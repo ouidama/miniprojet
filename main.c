@@ -104,7 +104,7 @@ void print_books(struct book books_list[BOOKS_MAX], long long books_list_l) {
 
 		sprintf(b_fields[0], "%lld", b->ID);
 		strcpy(b_fields[1], b->Title);
-		strcpy(b_fields[2], b->Title);
+		strcpy(b_fields[2], b->Author);
 		sprintf(b_fields[3], "%d", b->Date);
 		if (b->Borrowed) {
 			sprintf(b_fields[4], "%lld", b->Borrower->ID);
@@ -790,7 +790,7 @@ int main() {
 			"6: Afficher les etudiants\n"
 			"7: Emprunter un livre\n"
 			"8: Retourner un livre\n"
-			"9: effacer l'affichage\n"
+			"9: Effacer l'affichage\n"
 			"> "
 		);
 		while (1) { 
