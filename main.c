@@ -10,33 +10,60 @@
 #define STUDENTS_MAX 255
 
 #define numlen(n) (floor(log10l(n)) + 1)
-#define table_seperator() {\
-	putchar('+');\
-	repeat_char('-', id_w + 2);\
-	putchar('+');\
-	repeat_char('-', title_w + 2);\
-	putchar('+');\
-	repeat_char('-', author_w + 2);\
-	putchar('+');\
-	repeat_char('-', 6);\
-	putchar('+');\
-	putchar('\n');\
-}
+
+struct student {
+	long long ID;
+	char Fname[STRING_MAX];
+	char Lname[STRING_MAX];
+	int Year;
+};
 
 struct book {
 	long long ID;
 	char Title[STRING_MAX];
 	char Author[STRING_MAX];
 	int Date;
+
+	int Borrowed;
+	struct student *Borrower;
+	struct tm *BorrowDate;
+	struct tm *ReturnDate;
 };
 
 struct book books[BOOKS_MAX];
 long long books_l = 0;
 
+void keep_max(int *a, int b) {
+	if (b > *a) {
+		*a = b;
+	}
+}
+
 void repeat_char(char c, int n) {
 	for (int i = 0; i < n; i++) {
 		putchar(c);
 	}
+}
+
+void table_seperator(int field_widths[], int fields_l) {
+	for (int i = 0; i < fields_l; i++) {
+		putchar('+');
+		repeat_char('-', field_widths[i] + 2);
+	}
+	putchar('+');
+	putchar('\n');
+}
+
+void table_header(char fields[][STRING_MAX], int field_widths[], int fields_l) {
+	table_seperator(field_widths, fields_l);
+
+	for (int i = 0; i < fields_l; i++) {
+		printf("| %s", fields[i]);
+		repeat_char(' ',  field_widths[i] - strlen(fields[i]) + 1);
+	}
+	printf("|\n");
+
+	table_seperator(field_widths, fields_l);
 }
 
 void print_books(struct book books_list[BOOKS_MAX], long long books_list_l) {
@@ -45,62 +72,62 @@ void print_books(struct book books_list[BOOKS_MAX], long long books_list_l) {
 		return;
 	}
 
-	int id_w = 2;
-	int title_w = 5;
-	int author_w = 6;
+	char fields[][STRING_MAX] = { "ID", "Titre", "Auteur", "Date", "Emprunte par", "Date d'emprunt", "La date de retour" };
+	int fields_l = 7;
+	int field_widths[fields_l];
+	for (int i = 0; i < fields_l; i++) {
+		field_widths[i] = strlen(fields[i]);
+	}
+
 	for (int i = 0; i < books_list_l; i++) {
 		struct book *b = &books_list[i];
-		if (numlen(b->ID) > id_w) {
-			id_w = numlen(b->ID);
-		}
-		if (strlen(b->Title) > title_w)  {
-			title_w = strlen(b->Title);
-		}
-		if (strlen(b->Author) > author_w)  {
-			author_w = strlen(b->Author);
+		keep_max(&field_widths[0], numlen(b->ID));
+		keep_max(&field_widths[1], strlen(b->Title));
+		keep_max(&field_widths[2], strlen(b->Author));
+
+		if (b->Borrowed) {
+			keep_max(&field_widths[5], numlen(b->Borrower->ID));
 		}
 	}
 
-	putchar('+');
-	repeat_char('-', id_w+2);
-	putchar('+');
-	repeat_char('-', title_w+2);
-	putchar('+');
-	repeat_char('-', author_w+2);
-	putchar('+');
-	repeat_char('-', 6);
-	putchar('+');
-	putchar('\n');
-
-	printf("| ID");
-	repeat_char(' ', id_w - 2 + 1);
-	printf("| Titre");
-	repeat_char(' ', title_w - 5 + 1);
-	printf("| Auteur");
-	repeat_char(' ', author_w - 6 + 1);
-	printf("| Date");
-	printf(" |\n");
-
-	table_seperator();
+	table_header(fields, field_widths, fields_l);
 
 	for (int i = 0; i < books_list_l; i++) {
 		struct book *b = &books_list[i];
-		int b_id_w = numlen(b->ID);
-		int b_title_w = strlen(b->Title);
-		int b_author_w = strlen(b->Author);
-		int b_date_w = numlen(b->Date);
+		char b_fields[fields_l][STRING_MAX];
 
-		printf("| %lld", b->ID);
-		repeat_char(' ', id_w - b_id_w + 1);
-		printf("| %s", b->Title);
-		repeat_char(' ', title_w - b_title_w + 1);
-		printf("| %s", b->Author);
-		repeat_char(' ', author_w - b_author_w + 1);
-		printf("| %d", b->Date);
-		repeat_char(' ', 4 - b_date_w + 1);
+		sprintf(b_fields[0], "%lld", b->ID);
+		strcpy(b_fields[1], b->Title);
+		strcpy(b_fields[2], b->Title);
+		sprintf(b_fields[3], "%d", b->Date);
+		if (b->Borrowed) {
+			sprintf(b_fields[4], "%lld", b->Borrower->ID);
+
+			char borrow_date_s[STRING_MAX];
+			sprintf(borrow_date_s, "%d/%d/%d", b->BorrowDate->tm_mday, b->BorrowDate->tm_mon + 1, b->BorrowDate->tm_year + 1900);
+			strcpy(b_fields[5], borrow_date_s);
+
+			char return_date_s[STRING_MAX];
+			sprintf(return_date_s, "%d/%d/%d", b->ReturnDate->tm_mday, b->ReturnDate->tm_mon + 1, b->ReturnDate->tm_year + 1900);
+			strcpy(b_fields[6], return_date_s);
+		} else {
+			strcpy(b_fields[4], "-");
+			strcpy(b_fields[5], "-");
+			strcpy(b_fields[6], "-");
+		}
+
+		int b_field_widths[fields_l];
+		for (int i = 0; i < fields_l; i++) {
+			b_field_widths[i] = strlen(b_fields[i]);
+		}
+
+		for (int i = 0; i < fields_l; i++) {
+			printf("| %s", b_fields[i]);
+			repeat_char(' ', field_widths[i] - b_field_widths[i] + 1);
+		}
 		printf("|\n");
 
-		table_seperator();
+		table_seperator(field_widths, fields_l);
 	}
 }
 
@@ -162,7 +189,7 @@ int read_str(char str[]) {
 	return chars_read-1;
 }
 
-int is_duplicate_id(long long id) {
+int is_duplicate_id_book(long long id) {
 	for (int i = 0; i < books_l; i++) {
 		if (id == books[i].ID) {
 			return 1;
@@ -189,7 +216,7 @@ void add_book() {
 			printf("L'identifiant doit etre un positif!\n> ");
 			continue;
 		}
-		if (is_duplicate_id(b->ID)) {
+		if (is_duplicate_id_book(b->ID)) {
 			printf("L'identifiant doit etre unique!\n> ");
 			continue;
 		}
@@ -215,12 +242,14 @@ void add_book() {
 		time_t t = time(NULL);
 		struct tm tm = *localtime(&t);
 		int current_year = tm.tm_year + 1900;
-		if (b->Date > current_year || b->Date < 0) {
-			printf("La date doit etre entre 0 et %d!\n> ", current_year);
+		if (b->Date > current_year || b->Date < 1) {
+			printf("La date doit etre entre 1 et %d!\n> ", current_year);
 			continue;
 		}
 		break;
 	}
+
+	b->Borrowed = 0;
 
 	books_l++;
 }
@@ -426,15 +455,17 @@ void search_book() {
 	}
 }
 
-struct student {
-	long long ID;
-	char Fname[STRING_MAX];
-	char Lname[STRING_MAX];
-	int Year;
-};
-
 struct student students[STUDENTS_MAX];
 long long students_l = 0;
+
+int is_duplicate_id_student(long long id) {
+	for (int i = 0; i < students_l; i++) {
+		if (id == students[i].ID) {
+			return 1;
+		}
+	}
+	return 0;
+}
 
 void add_student() {
 	if (students_l == STUDENTS_MAX) {
@@ -448,38 +479,38 @@ void add_student() {
 	while (1) { 
 		if (read_ll(&s->ID)) { 
 			printf("L'identifiant doit etre un nombre!\n> ");
-			continue;
-		}
-		if (s->ID < 0) {
-			printf("L'identifiant doit etre un positif!\n> ");
-			continue;
-		}
-		if (is_duplicate_id(s->ID)) {
-			printf("L'identifiant doit etre unique!\n> ");
-			continue;
-		}
-		break;
+		continue;
 	}
-
-	printf("Prenom\n> ");
-	while (!read_str(s->Fname)) { 
-		printf("Le prenom doit avoir entre 1 and %d caracteres!\n> ", STRING_MAX);
+	if (s->ID < 0) {
+		printf("L'identifiant doit etre un positif!\n> ");
+		continue;
 	}
-
-	printf("Nom\n> ");
-	while (!read_str(s->Lname)) { 
-		printf("Le nom doit avoir entre 1 and %d caracteres!\n> ", STRING_MAX);
+	if (is_duplicate_id_student(s->ID)) {
+		printf("L'identifiant doit etre unique!\n> ");
+		continue;
 	}
+	break;
+}
 
-	printf("Niveau d'etude\n> ");
-	while (1) { 
-		if (read_i(&s->Year)) { 
-			printf("Le niveau doit etre un nombre!\n> ");
-			continue;
-		}
-		if (s->Year > 5 || s->Year < 0) {
-			printf("La niveau d'etude doit etre entre 1 et 5!\n> ");
-			continue;
+printf("Prenom\n> ");
+while (!read_str(s->Fname)) { 
+	printf("Le prenom doit avoir entre 1 and %d caracteres!\n> ", STRING_MAX);
+}
+
+printf("Nom\n> ");
+while (!read_str(s->Lname)) { 
+	printf("Le nom doit avoir entre 1 and %d caracteres!\n> ", STRING_MAX);
+}
+
+printf("Niveau d'etude\n> ");
+while (1) { 
+	if (read_i(&s->Year)) { 
+		printf("Le niveau doit etre un nombre!\n> ");
+		continue;
+	}
+	if (s->Year > 5 || s->Year <= 0) {
+		printf("La niveau d'etude doit etre entre 1 et 5!\n> ");
+		continue;
 		}
 		break;
 	}
@@ -497,59 +528,174 @@ void print_students() {
 	int fname_w = 6;
 	int lname_w = 3;
 	for (int i = 0; i < students_l; i++) {
-		struct book *s = &students[i];
+		struct student *s = &students[i];
 		if (numlen(s->ID) > id_w) {
 			id_w = numlen(s->ID);
 		}
 		if (strlen(s->Fname) > fname_w)  {
 			fname_w = strlen(s->Fname);
 		}
-		if (strlen(s->Lname) > author_w)  {
+		if (strlen(s->Lname) > lname_w)  {
 			lname_w = strlen(s->Lname);
 		}
 	}
 
-	putchar('+');
-	repeat_char('-', id_w+2);
-	putchar('+');
-	repeat_char('-', title_w+2);
-	putchar('+');
-	repeat_char('-', author_w+2);
-	putchar('+');
-	repeat_char('-', 6);
-	putchar('+');
-	putchar('\n');
+	char fields[][STRING_MAX] = { "ID", "Prenom", "Nom", "Niveau d'etudes" };
+	int field_widths[] = { id_w, fname_w, lname_w, 15 };
+	table_header(fields, field_widths, 4);
 
-	printf("| ID");
-	repeat_char(' ', id_w - 2 + 1);
-	printf("| Titre");
-	repeat_char(' ', title_w - 5 + 1);
-	printf("| Auteur");
-	repeat_char(' ', author_w - 6 + 1);
-	printf("| Date");
-	printf(" |\n");
+	for (int i = 0; i < students_l; i++) {
+		struct student *s = &students[i];
+		int s_id_w = numlen(s->ID);
+		int s_fname_w = strlen(s->Fname);
+		int s_lname_w = strlen(s->Lname);
+		int s_year_w = numlen(s->Year);
 
-	table_seperator();
-
-	for (int i = 0; i < books_list_l; i++) {
-		struct book *b = &books_list[i];
-		int b_id_w = numlen(b->ID);
-		int b_title_w = strlen(b->Title);
-		int b_author_w = strlen(b->Author);
-		int b_date_w = numlen(b->Date);
-
-		printf("| %lld", b->ID);
-		repeat_char(' ', id_w - b_id_w + 1);
-		printf("| %s", b->Title);
-		repeat_char(' ', title_w - b_title_w + 1);
-		printf("| %s", b->Author);
-		repeat_char(' ', author_w - b_author_w + 1);
-		printf("| %d", b->Date);
-		repeat_char(' ', 4 - b_date_w + 1);
+		printf("| %lld", s->ID);
+		repeat_char(' ', id_w - s_id_w + 1);
+		printf("| %s", s->Fname);
+		repeat_char(' ', fname_w - s_fname_w + 1);
+		printf("| %s", s->Lname);
+		repeat_char(' ', lname_w - s_lname_w + 1);
+		switch (s->Year) {
+			case 1: printf("| 1ere annee"); break;
+			case 2: printf("| 2eme annee"); break;
+			case 3: printf("| 3eme annee"); break;
+			case 4: printf("| 4eme annee"); break;
+			case 5: printf("| 5eme annee"); break;
+		}
+		repeat_char(' ', 6);
 		printf("|\n");
 
-		table_seperator();
+		table_seperator(field_widths, 4);
 	}
+}
+
+void borrow_book() {
+	if (books_l == 0) {
+		printf("Il y'a aucun livre.\n");
+		return;
+	}
+	if (students_l == 0) {
+		printf("Il y'a aucun etudiant.\n");
+		return;
+	}
+
+	long long int book_id;
+	char title[STRING_MAX];
+
+	printf("Identifiant du livre\n> ");
+	while (1) { 
+		if (read_ll(&book_id)) { 
+			printf("L'identifiant doit etre un nombre!\n> ");
+			continue;
+		}
+		if (book_id < 0) {
+			printf("L'identifiant doit etre un positif!\n> ");
+			continue;
+		}
+		break;
+	}
+
+	printf("Titre\n> ");
+	int title_l;
+	while (!(title_l = read_str(title))) { 
+		printf("Le titre doit avoir entre 1 and %d caracteres!\n> ", STRING_MAX);
+	}
+
+	struct book *b = NULL;
+	for (int i = 0; i < books_l; i++) {
+		if (books[i].ID == book_id && !strncmp(title, books[i].Title, title_l)) {
+			b = &books[i];
+		}
+	}
+
+	if (!b) {
+		printf("Aucun livre avec cet identifiant et titre existe!");
+		return;
+	}
+
+	long long int student_id;
+	char lname[STRING_MAX];
+
+	printf("Identifiant d'etudiant\n> ");
+	while (1) { 
+		if (read_ll(&student_id)) { 
+			printf("L'identifiant doit etre un nombre!\n> ");
+			continue;
+		}
+		if (student_id < 0) {
+			printf("L'identifiant doit etre un positif!\n> ");
+			continue;
+		}
+		break;
+	}
+
+	printf("Nom\n> ");
+	int lname_l;
+	while (!(lname_l = read_str(lname))) { 
+		printf("Le nom doit avoir entre 1 and %d caracteres!\n> ", STRING_MAX);
+	}
+
+	b->Borrower = NULL;
+	for (int i = 0; i < students_l; i++) {
+		if (students[i].ID == student_id && !strncmp(lname, students[i].Lname, lname_l)) {
+			b->Borrower = &students[i];
+		}
+	}
+
+	if (!(b->Borrower)) {
+		printf("Aucun etudiant avec cet identifiant et nom existe!");
+		return;
+	}
+
+	b->Borrowed++;
+
+	printf("Date d'emprunt (Sous la forme JJ/MM/AAAA)\n> ");
+	char date_s[STRING_MAX];
+	int year, month, day;
+	struct tm borrow_date;
+	while (1) {
+		if (!read_str(date_s) || sscanf(date_s, "%d/%d/%d", &day, &month, &year) != 3) {
+			printf("La date d'emprunt doit etre ecrit sous la form JJ/MM/AAAA!\n> ");
+			continue;
+		}
+
+		if (year < 1900) {
+			printf("L'annne ne peut pas etre inferieur a 1900!\n> ");
+			continue;
+		}
+
+		if (month < 1 || month > 12) {
+			printf("Le mois doit etre entre 1 et 12!\n> ");
+			continue;
+		}
+
+		printf("We'RE GOOD\n");
+
+		if (day < 1 || day > 31) {
+			printf("Le jour doit etre entre 1 et 31!\n> ");
+			continue;
+		}
+
+		printf("ALL UNGOOD :D\n");
+		borrow_date.tm_year = year - 1900;
+		borrow_date.tm_mon = month - 1;
+		borrow_date.tm_mday = day;
+		printf("ALL GOOD :D\n");
+
+		time_t t = time(NULL);
+		if (mktime(&borrow_date) > mktime(localtime(&t))) {
+			printf("La date d'emprunt ne peut pas etre dans le futur!\n> ");
+			continue;
+		}
+
+		break;
+	}
+	b->BorrowDate = &borrow_date;
+	b->ReturnDate = &borrow_date;
+
+	printf("%d\n", b->BorrowDate->tm_year);
 }
 
 int main() {
@@ -563,11 +709,12 @@ int main() {
 			"4: Chercher un livre\n"
 			"5: Ajouter un etudiant\n"
 			"6: Afficher les etudiants\n"
+			"7: Emprunter un livre\n"
 			"> "
 		);
 		while (1) { 
-			if (read_i(&input) || input < 0 || input > 6) { 
-				printf("Votre choix doit etre un nombre entre 0 et 4!\n> ");
+			if (read_i(&input) || input < 0 || input > 7) { 
+				printf("Votre choix doit etre un nombre entre 0 et 7!\n> ");
 				continue;
 			}
 			break;
@@ -580,6 +727,7 @@ int main() {
 			case 4: search_book(); break;
 			case 5: add_student(); break;
 			case 6: print_students(); break;
+			case 7: borrow_book(); break;
 		}
 		printf("\n");
 		repeat_char('-', 80);
