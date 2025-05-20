@@ -138,56 +138,60 @@ void print_books(struct book books_list[BOOKS_MAX], long long books_list_l) {
 }
 
 int read_ll(long long *ll) {
-	char *string = NULL;
-	size_t size = 0;
-	ssize_t chars_read;
+	char string[STRING_MAX + 3];
 
-	chars_read = getline(&string, &size, stdin);
+	fgets(string, STRING_MAX + 2, stdin);
+	int chars_read = strlen(string);
+
+	if (chars_read > STRING_MAX || chars_read <= 0) {
+		int ch;
+		while ((ch = getchar()) != '\n' && ch != EOF) {}
+	}
+
 	char *endptr;
 	errno = 0;
-	long long t_ll = strtoll(string, &endptr, 10);
+	long long t_ll= strtol(string, &endptr, 10);
 
 	if (errno || endptr == string) {
-		free(string);
 		return 1;
 	}
 
 	*ll = t_ll;
-
-	free(string);
 	return 0;
 }
 
 int read_i(int *i) {
-	char *string = NULL;
-	size_t size = 0;
-	ssize_t chars_read;
+	char string[STRING_MAX + 3];
 
-	chars_read = getline(&string, &size, stdin);
+	fgets(string, STRING_MAX + 2, stdin);
+	int chars_read = strlen(string);
+
+	if (chars_read > STRING_MAX || chars_read <= 0) {
+		int ch;
+		while ((ch = getchar()) != '\n' && ch != EOF) {}
+	}
+
 	char *endptr;
 	errno = 0;
 	int t_i= strtol(string, &endptr, 10);
 
 	if (errno || endptr == string) {
-		free(string);
 		return 1;
 	}
 
 	*i = t_i;
-
-	free(string);
 	return 0;
 }
 
 int read_str(char str[]) {
-	char *string = NULL;
-	size_t size = 0;
-	ssize_t chars_read;
+	char string[STRING_MAX + 3];
 
-	chars_read = getline(&string, &size, stdin);
+	fgets(string, STRING_MAX + 2, stdin);
+	int chars_read = strlen(string);
 
-	if (chars_read - 1> STRING_MAX || chars_read - 1 <= 0) {
-		free(string);
+	if (chars_read > STRING_MAX || chars_read <= 0) {
+		int ch;
+		while ((ch = getchar()) != '\n' && ch != EOF) {}
 		return 0;
 	}
 
@@ -530,50 +534,50 @@ void print_students() {
 		return;
 	}
 
-	int id_w = 2;
-	int fname_w = 6;
-	int lname_w = 3;
-	for (int i = 0; i < students_l; i++) {
-		struct student *s = &students[i];
-		if (numlen(s->ID) > id_w) {
-			id_w = numlen(s->ID);
-		}
-		if (strlen(s->Fname) > fname_w)  {
-			fname_w = strlen(s->Fname);
-		}
-		if (strlen(s->Lname) > lname_w)  {
-			lname_w = strlen(s->Lname);
-		}
+	char fields[][STRING_MAX] = { "ID", "Prenom", "Nom", "Niveau d'etudes" };
+	int fields_l = 4;
+	int field_widths[fields_l];
+
+	for (int i = 0; i < fields_l; i++) {
+		field_widths[i] = strlen(fields[i]);
 	}
 
-	char fields[][STRING_MAX] = { "ID", "Prenom", "Nom", "Niveau d'etudes" };
-	int field_widths[] = { id_w, fname_w, lname_w, 15 };
-	table_header(fields, field_widths, 4);
+	for (int i = 0; i < students_l; i++) {
+		struct student *s = &students[i];
+		keep_max(&field_widths[0], numlen(s->ID));
+		keep_max(&field_widths[1], strlen(s->Fname));
+		keep_max(&field_widths[2], strlen(s->Lname));
+	}
+
+	table_header(fields, field_widths, fields_l);
 
 	for (int i = 0; i < students_l; i++) {
 		struct student *s = &students[i];
-		int s_id_w = numlen(s->ID);
-		int s_fname_w = strlen(s->Fname);
-		int s_lname_w = strlen(s->Lname);
-		int s_year_w = numlen(s->Year);
+		char s_fields[fields_l][STRING_MAX];
 
-		printf("| %lld", s->ID);
-		repeat_char(' ', id_w - s_id_w + 1);
-		printf("| %s", s->Fname);
-		repeat_char(' ', fname_w - s_fname_w + 1);
-		printf("| %s", s->Lname);
-		repeat_char(' ', lname_w - s_lname_w + 1);
+		sprintf(s_fields[0], "%lld", s->ID);
+		strcpy(s_fields[1], s->Fname);
+		strcpy(s_fields[2], s->Lname);
 		switch (s->Year) {
-			case 1: printf("| 1ere annee"); break;
-			case 2: printf("| 2eme annee"); break;
-			case 3: printf("| 3eme annee"); break;
-			case 4: printf("| 4eme annee"); break;
-			case 5: printf("| 5eme annee"); break;
+			case 1: strcpy(s_fields[3], "1ere annee"); break;
+			case 2: strcpy(s_fields[3], "2eme annee"); break;
+			case 3: strcpy(s_fields[3], "3eme annee"); break;
+			case 4: strcpy(s_fields[3], "4eme annee"); break;
+			case 5: strcpy(s_fields[3], "5eme annee"); break;
 		}
-		repeat_char(' ', 6);
+
+		int s_field_widths[fields_l];
+		for (int i = 0; i < fields_l; i++) {
+			s_field_widths[i] = strlen(s_fields[i]);
+		}
+
+		for (int i = 0; i < fields_l; i++) {
+			printf("| %s", s_fields[i]);
+			repeat_char(' ', field_widths[i] - s_field_widths[i] + 1);
+		}
 		printf("|\n");
 
-		table_seperator(field_widths, 4);
+		table_seperator(field_widths, fields_l);
 	}
 }
 
