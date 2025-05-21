@@ -39,6 +39,19 @@ struct book {
 struct book books[BOOKS_MAX];
 long long books_l = 0;
 
+int is_same_str(char str1[], char str2[], int len) {
+	int res;
+	if (!(strlen(str1) == len)) {
+		return 0;
+	}
+
+	if (strncmp(str1, str2, len)) {
+		return 0;
+	}
+
+	return 1;
+}
+
 void keep_max(int *a, int b) {
 	if (b > *a) {
 		*a = b;
@@ -301,7 +314,7 @@ void delete_book_title() {
 	struct book books_dup_title[BOOKS_MAX];
 	long long books_dup_title_l = 0;
 	for (int i = 0; i < books_l; i++) {
-		if (!strncmp(books[i].Title, title, title_l)) {
+		if (is_same_str(books[i].Title, title, title_l)) {
 			books_dup_title[books_dup_title_l] = books[i];
 			books_dup_title_l++;
 		}
@@ -394,7 +407,7 @@ void search_book_title() {
 	struct book books_dup_title[BOOKS_MAX];
 	long long books_dup_title_l = 0;
 	for (int i = 0; i < books_l; i++) {
-		if (!strncmp(books[i].Title, title, title_l)) {
+		if (is_same_str(books[i].Title, title, title_l)) {
 			books_dup_title[books_dup_title_l] = books[i];
 			books_dup_title_l++;
 		}
@@ -615,7 +628,7 @@ void borrow_book() {
 
 	struct book *b = NULL;
 	for (int i = 0; i < books_l; i++) {
-		if (books[i].ID == book_id && !strncmp(title, books[i].Title, title_l)) {
+		if (books[i].ID == book_id && is_same_str(title, books[i].Title, title_l)) {
 			b = &books[i];
 		}
 	}
@@ -649,7 +662,7 @@ void borrow_book() {
 
 	b->Borrower = NULL;
 	for (int i = 0; i < students_l; i++) {
-		if (students[i].ID == student_id && !strncmp(lname, students[i].Lname, lname_l)) {
+		if (students[i].ID == student_id && is_same_str(lname, students[i].Lname, lname_l)) {
 			b->Borrower = &students[i];
 		}
 	}
