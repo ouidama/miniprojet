@@ -208,7 +208,8 @@ int read_str(char str[]) {
 		return 0;
 	}
 
-	strncpy(str, string, chars_read-1);
+	strtok(string, "\n");
+	snprintf(str, 32, "%s", string);
 	return chars_read-1;
 }
 
